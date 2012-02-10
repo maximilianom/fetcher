@@ -1,0 +1,5 @@
+$ python UrlConverter *amount of urls to test*
+
+$ python SaveInFileHandler -t 15 -s httpiframe
+
+Raises 15 threads to fetch and seeds file httpiframe
