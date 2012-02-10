@@ -333,15 +333,10 @@ class HTTPConnectionControl(object):
                 headers['Content-Type'] = 'application/x-www-form-urlencoded'
             else:
                 data = ''
-            try:
-                connection.request(req_res.request_method, url, data, headers)
-                response = connection.getresponse()
-                response_time = time.time() - start
-                response_body = response.read()
-            except Exception:
-                response = urllib.urlopen(url)
-                response_time = time.time() - start
-                response_body = response.read()
+            connection.request(req_res.request_method, url, data, headers)
+            response = connection.getresponse()
+            response_time = time.time() - start
+            response_body = response.read()
             self.cq_lru[(address, encrypted)] = connection
         except Exception:
             connection.close()
