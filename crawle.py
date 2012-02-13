@@ -33,7 +33,7 @@ class Handler(object):
         """pre_process is called directly before making the reqeust. Any of the
         request parameters can be modified here.
 
-        Setting the responseURL to None will cause the request to be dropped.
+e       Setting the responseURL to None will cause the request to be dropped.
         This is useful for testing if a redirect link should be followed.
         """
         return
@@ -69,7 +69,8 @@ class RequestResponse(object):
         self.error = None
         self.redirects = redirects
         self.extra = []
-        self.retries = 4
+        self.retries = 0
+        self.frame_depth = 0
         self.name = urllib.quote_plus(url)
 
         self.request_headers = headers
@@ -339,8 +340,15 @@ class HTTPConnectionControl(object):
             response_body = response.read()
             self.cq_lru[(address, encrypted)] = connection
         except Exception:
+            print "Last attempt to get that html"
             connection.close()
-            raise
+            site = urllib.urlopen(req_res.response_url)
+            res = site.read()
+            response_time = time.time() - start
+            response_body = res
+            if response_body == None:
+                raise
+
 
         if response.status in (301, 302, 303) and req_res.redirects != None:
             if req_res.redirects <= 0:

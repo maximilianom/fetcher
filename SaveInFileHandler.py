@@ -35,12 +35,25 @@ class SaveInFileHandler(crawle.Handler):
         dom = lxml.html.document_fromstring(req_res.response_body)
 
         if dom.xpath('/html/body/iframe/@src') :
-           return dom.xpath('/html/body/iframe/@src')[0]
+           frame = dom.xpath('/html/body/iframe/@src')[0].lower()
+           if self._validate_frame(frame):
+               return frame
+           else:
+               print >> self.wrong_frame, frame
 
         elif dom.xpath(".//frame/@src") :
-           return dom.xpath(".//frame/@src")[0]
+           frame = dom.xpath(".//frame/@src")[0].lower()
+           if self._validate_frame(frame):
+               return frame
+           else:
+               print >> self.wrong_frame, frame
 
         return None
+
+    def _validate_frame(self, url):
+        parsed_url = urlparse.urlparse(url)
+        return (parsed_url.scheme == 'http') or (parsed_url.scheme == 'https')
+
 
     def _get_file_name(self, req_res):
         """
@@ -58,6 +71,13 @@ class SaveInFileHandler(crawle.Handler):
                                self.folder_index,
                                req_res.name)
 
+    def _save_to_file(self, req_res):
+        file = open(self._get_file_name(req_res), 'w')
+        file.write(req_res.response_body)
+        file.close()
+        print >> self.processed_log, req_res.name
+        return
+
 
     def process(self, req_res, queue):
         """
@@ -71,54 +91,36 @@ class SaveInFileHandler(crawle.Handler):
             return
 
         if req_res.response_status != 200:
-            req_res.retries -= 1
-            if req_res.retries <= 0 or req_res.response_status == 404:
+            req_res.retries += 1
+            if req_res.retries >= 4 or req_res.response_status == 404:
                 print "Discarding this url: %s" % req_res.name
                 print >> self.err_log, req_res.name
+                return
             else:
                 queue.put(req_res)
         else:
 
             try:
                 iframe_url = self._get_frame_content(req_res)
-            except Exception, e:
-                print "Failed to get frame content"
-                print >> self.err_log, req_res.name
-                return
 
-            if iframe_url:
-                #It has frame. Should we try again with that url?
-#                _,netloc,_,_,_,_ = urlparse.urlparse(iframe_url)
-#                if netloc == '':
-#                    print "URL INVALIDA!"
-#                    print >> self.wrong_frame, iframe_url
-#                    print >> self.processed_log, req_res.name
-#                    file = open(self._get_file_name(req_res), 'w')
-#                    file.write(req_res.response_body)
-#                    file.close()
-#                    return
-
-                if req_res.retries <= 0:
-                    print "Too many retries for this one: %s" % req_res.name
-                    print >> self.err_log, req_res.name
+                if iframe_url:
+                    if req_res.frame_depth >= 4:
+                        print "Frame too deep. Keeping last frame of %s" % req_res.name
+                        self._save_to_file(req_res)
+                    else:
+                        print "Frame detected, putting %s back in queue" % req_res.name
+                        print "Frame: %s" % iframe_url
+                        req_res.response_url = iframe_url
+                        req_res.frame_depth += 1
+                        queue.put(req_res)
+                        return
                 else:
-                    print "Frame detected, putting %s back in queue" % req_res.name
-                    parsed = urlparse.urlparse(iframe_url)
-                    req_res.response_url = iframe_url
-                    req_res.retries -= 1
-                    queue.put(req_res)
-            else:
-                try:
-                    file = open(self._get_file_name(req_res), 'w')
-                    file.write(req_res.response_body)
-                    file.close()
-                except Exception, e:
-                    print "Exception while trying to write fetched result of: %s" % e
-                    print "Writing url in err.log"
-                    print >> self.err_log, req_res.name
-                    return
-                print >> self.processed_log, req_res.name
+                    self._save_to_file(req_res)
+
                 print "Success for %s" % req_res.name
+            except Exception, e:
+                print "Failed to process url: %s. Exception: %s." % (req_res.response_url, e)
+                print >> self.err_log, req_res.name
 
 if __name__ == "__main__":
     crawle.run_crawle(sys.argv, handler=SaveInFileHandler('./Things'))
