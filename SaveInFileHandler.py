@@ -1,14 +1,25 @@
 import os
 import sys
 import urlparse
+import logging
 
 import lxml.html
 import crawle
 
-class SaveInFileHandler(crawle.Handler):
+class FileHandler(crawle.Handler):
     """
     This should imitate previos fetcher
     """
+
+    #Basic log configuration
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(formatter)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(sh)
+
 
     def __init__(self, path, max_files=20000):
         """
@@ -22,7 +33,7 @@ class SaveInFileHandler(crawle.Handler):
         self.max_files = max_files
         self.folder_index = 1
         if os.path.exists('%s/%d' % (self.path_to_save, self.folder_index)):
-            print "You're trying to write over an existing file"
+            FileHandler.logger.warning("You're trying to write over an existing file")
             sys.exit(1) # Better this than overwrite some important data
         else:
             os.makedirs('%s/%d' % (self.path_to_save, self.folder_index))
@@ -39,14 +50,16 @@ class SaveInFileHandler(crawle.Handler):
            if self._validate_frame(frame):
                return frame
            else:
-               print >> self.wrong_frame, frame
+               print >> self.wrong_frame, "%s - frame: %s" % (req_res.name,
+                                                              frame)
 
         elif dom.xpath(".//frame/@src") :
            frame = dom.xpath(".//frame/@src")[0].lower()
            if self._validate_frame(frame):
                return frame
            else:
-               print >> self.wrong_frame, frame
+              print >> self.wrong_frame, "%s - frame: %s" % (req_res.name,
+                                                              frame)
 
         return None
 
@@ -85,16 +98,18 @@ class SaveInFileHandler(crawle.Handler):
         http request
         """
         if not req_res.response_status:
-            print "Unexepected error in: %s. Error: %s" % (req_res.response_url,
-                                                           req_res.error)
-            print >> self.err_log, req_res.name
+            FileHandler.logger.error("Unexepected error in: %s. Error: %s",
+                                     req_res.response_url,
+                                     req_res.error)
+            print >> self.err_log, "%s - %s" % (req_res.name, req_res.error)
             return
 
         if req_res.response_status != 200:
             req_res.retries += 1
             if req_res.retries >= 4 or req_res.response_status == 404:
-                print "Discarding this url: %s" % req_res.name
-                print >> self.err_log, req_res.name
+                FileHandler.logger.info("Discarding this url: %s", req_res.name)
+                print >> self.err_log, "%s - HTTP ERROR [%d]" % (req_res.name,
+                                                                 req_res.response_status)
                 return
             else:
                 queue.put(req_res)
@@ -105,11 +120,13 @@ class SaveInFileHandler(crawle.Handler):
 
                 if iframe_url:
                     if req_res.frame_depth >= 4:
-                        print "Frame too deep. Keeping last frame of %s" % req_res.name
+                        FileHandler.logger.debug("Frame too deep. Keeping last frame of %s",
+                                                req_res.name)
                         self._save_to_file(req_res)
                     else:
-                        print "Frame detected, putting %s back in queue" % req_res.name
-                        print "Frame: %s" % iframe_url
+                        FileHandler.logger.debug("Frame detected: %s putting %s back in queue",
+                                                iframe_url,
+                                                req_res.name)
                         req_res.response_url = iframe_url
                         req_res.frame_depth += 1
                         queue.put(req_res)
@@ -117,12 +134,13 @@ class SaveInFileHandler(crawle.Handler):
                 else:
                     self._save_to_file(req_res)
 
-                print "Success for %s" % req_res.name
+                FileHandler.logger.info("Success for %s", req_res.name)
             except Exception, e:
-                print "Failed to process url: %s. Exception: %s." % (req_res.response_url, e)
-                print >> self.err_log, req_res.name
+                FileHandler.logger.error("Failed to process url: %s. Exception: %s.",
+                                         req_res.response_url, e)
+                print >> self.err_log, "%s - Exception: %s" % (req_res.name, e)
 
 if __name__ == "__main__":
-    crawle.run_crawle(sys.argv, handler=SaveInFileHandler('./Things'))
+    crawle.run_crawle(sys.argv, handler=FileHandler('./Things'))
 
 
