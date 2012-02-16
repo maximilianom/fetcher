@@ -68,10 +68,10 @@ class RequestResponse(object):
         """
         self.error = None
         self.redirects = redirects
-        self.extra = []
         self.retries = 0
         self.frame_depth = 0
-        self.name = urllib.quote_plus(url)
+        self.name = urlparse.urlparse(url).netloc
+        self.last_attempt = True
 
         self.request_headers = headers
         self.request_url = url
@@ -340,7 +340,6 @@ class HTTPConnectionControl(object):
             response_body = response.read()
             self.cq_lru[(address, encrypted)] = connection
         except Exception:
-            print "Last attempt to get that html"
             connection.close()
             site = urllib.urlopen(req_res.response_url)
             res = site.read()
@@ -379,7 +378,6 @@ class HTTPConnectionControl(object):
                     sb.stdin.close()
                     req_res.response_body = sb.stdout.read()
                     del sb
-                    req_res.extra.append('Used zcat')
             else:
                 req_res.response_body = response_body
 
@@ -635,7 +633,6 @@ class URLQueue(CrawlQueue):
             except IOError:
                 raise Exception('Could not open seed file')
             for line in fp:
-                #TODO: Chequear esto
                 self.queue.append(RequestResponse(line.strip()))
             fp.close()
             URLQueue.logger.info('Queued: %d from seed file' % len(self.queue))
@@ -683,7 +680,7 @@ class URLQueue(CrawlQueue):
 
     def _put(self, url):
         """Puts the item back on the queue."""
-        self.queue.append(url)
+        self.queue.insert(0, url)
 
 def quick_request(url, redirects=30, timeout=30):
     """Convenience function to quickly request a URL within CRAWl-E."""

@@ -38,11 +38,15 @@ class FileHandler(crawle.Handler):
         else:
             os.makedirs('%s/%d' % (self.path_to_save, self.folder_index))
             self.err_log = open('%s/err.log' % self.path_to_save, 'a')
-            self.processed_log = open('%s/proccessed.log' % self.path_to_save, 'a')
+            self.processed_log = open('%s/processed.log' % self.path_to_save, 'a')
             self.wrong_frame = open('%s/wrong_frame.log' % self.path_to_save, 'a')
 
 
     def _get_frame_content(self, req_res):
+        """
+        In charge of detecting and retrieving frames src, as well as validate
+        if they have a valid src (relative paths should not be accepted)
+        """
         dom = lxml.html.document_fromstring(req_res.response_body)
 
         if dom.xpath('/html/body/iframe/@src') :
@@ -98,6 +102,16 @@ class FileHandler(crawle.Handler):
         http request
         """
         if not req_res.response_status:
+            if req_res.last_attempt:
+                FileHandler.logger.info("Trying to add 'www' to %s in a desperate last attempt",
+                                        req_res.response_url)
+                urlparsed = urlparse.urlparse(req_res.response_url)
+                new_url = "%s://www.%s" % (urlparsed.scheme, urlparsed.netloc)
+                req_res.response_url = new_url
+                req_res.last_attempt = False
+                queue.put(req_res)
+                return
+
             FileHandler.logger.error("Unexepected error in: %s. Error: %s",
                                      req_res.response_url,
                                      req_res.error)
@@ -107,14 +121,23 @@ class FileHandler(crawle.Handler):
         if req_res.response_status != 200:
             req_res.retries += 1
             if req_res.retries >= 4 or req_res.response_status == 404:
+                if req_res.last_attempt:
+                    FileHandler.logger.info("Trying to add 'www' to %s in a desperate last attempt",
+                                            req_res.response_url)
+                    urlparsed = urlparse.urlparse(req_res.response_url)
+                    new_url = "%s://www.%s" % (urlparsed.scheme, urlparsed.netloc)
+                    req_res.response_url = new_url
+                    req_res.last_attempt = False
+                    queue.put(req_res)
+                    return
+
                 FileHandler.logger.info("Discarding this url: %s", req_res.name)
                 print >> self.err_log, "%s - HTTP ERROR [%d]" % (req_res.name,
                                                                  req_res.response_status)
                 return
             else:
                 queue.put(req_res)
-        else:
-
+        else: # Valid response status. Does it have any frames?
             try:
                 iframe_url = self._get_frame_content(req_res)
 
@@ -141,6 +164,6 @@ class FileHandler(crawle.Handler):
                 print >> self.err_log, "%s - Exception: %s" % (req_res.name, e)
 
 if __name__ == "__main__":
-    crawle.run_crawle(sys.argv, handler=FileHandler('./Things'))
+    crawle.run_crawle(sys.argv, handler=FileHandler('../Things'))
 
 
