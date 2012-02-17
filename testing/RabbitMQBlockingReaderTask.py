@@ -1,4 +1,3 @@
-import time
 import threading
 
 import pika
@@ -6,48 +5,47 @@ from pika.adapters import BlockingConnection
 
 pika.log.setup(color=True)
 
-class BlockingReader(threading.Thread):
+class BlockingReader(object):
     def __init__(self, host, queue):
-        threading.Thread.__init__(self)
 
         self.queue = queue
         self.parameters = pika.ConnectionParameters(host)
         pika.log.info("Establishing connection")
         self.connection = BlockingConnection(self.parameters)
 
-        self.channel = self.connection.channel()
         pika.log.info("About to declare queue")
 
-        self.channel.queue_declare(queue="test", durable=True,
-                                   exclusive=False, auto_delete=False)
         pika.log.info("Queue declared")
 
-    def read(self):
+    def read(self, channel):
         pika.log.info("Reading single message")
-        method, header, body = self.channel.basic_get(queue=self.queue)
+        method, header, body = channel.basic_get(queue=self.queue)
         pika.log.info("Message received!")
-        pika.log.info("Body: %s" % body)
-        self.channel.basic_ack(delivery_tag=method.delivery_tag)
-        time.sleep(3)
+        channel.basic_ack(delivery_tag=method.delivery_tag)
 
-    def run(self):
-        while self.connection.is_open:
-            self.read()
+    def create_channel(self):
+        channel = self.connection.channel()
+        return channel
 
     def stop(self):
         self.connection.close()
 
+class Jodeme(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        new_channel = self.queue.create_channel()
+        while self.queue.connection.is_open:
+            self.queue.read(new_channel)
 
 
 if __name__ == "__main__":
     threads = []
+    reader = BlockingReader('localhost', 'test1')
     for num in range(0,3):
-        threads.append(BlockingReader('localhost', 'test'))
+        threads.append(Jodeme(reader))
 
     for thread in threads:
         thread.start()
-
-    time.sleep(40)
-    for thread in threads:
-        thread.join()
-

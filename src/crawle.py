@@ -1,8 +1,11 @@
 """CRAWL-E is a highly distributed web crawling framework."""
 from datetime import datetime
 import Queue, cStringIO, gzip, httplib, logging, mimetypes, resource, socket
-import sys, subprocess, threading, time, urllib, urlparse
+import sys, subprocess, threading, time, urllib, urlparse, pickle
 from optparse import OptionParser
+
+import pika
+from pika.adapters import BlockingConnection
 
 VERSION = '0.6.4'
 HEADER_DEFAULTS = {'Accept':'*/*', 'Accept-Language':'en-us,en;q=0.8',
@@ -599,6 +602,51 @@ class CrawlQueue(object):
         assert item # pychecker hack
         raise NotImplementedError('CrawlQueue._put(...) must be implemented')
 
+class RabbitMQProcessor(CrawlQueue):
+    """class created to encapsulate the rabbit reading and rewriting proccess
+    to make common interface towards already existing crawle code
+    Author: Maximiliano Mendez
+    """
+
+    def __init__(self, host, queue_name):
+        super(RabbitMQProcessor, self).__init__()
+        self.queue_name = queue_name
+        self.parameters = pika.ConnectionParameters(host)
+        self.connection = BlockingConnection(self.parameters)
+
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue=self.queue_name, durable=True,
+                                   exclusive=False, auto_delete=False)
+
+    def _get(self):
+        method, header, body = self.channel.basic_get(queue=self.queue_name)
+
+        if method.NAME == 'Basic.GetEmpty':
+            raise Queue.Empty
+        if body == None:
+            print "======================================="
+            print method.NAME
+            print "method: %s" % method
+            print "header:"
+            print header
+            print "body:"
+            print body
+            print "======================================="
+        req_res = pickle.loads(body)
+        self.channel.basic_ack(delivery_tag=method.delivery_tag)
+        return req_res
+
+    def _put(self, req_res):
+        message = pickle.dumps(req_res)
+        self.channel.basic_publish(exchange='',
+                                   routing_key=self.queue_name,
+                                   body=message,
+                                   properties=pika.BasicProperties(
+                                   content_type="text/plain",
+                                   delivery_mode=1))
+
+    def stop(self):
+        self.connection.close()
 
 class URLQueue(CrawlQueue):
     """URLQueue is the most basic queue type and is all that is needed for
@@ -702,7 +750,8 @@ def run_crawle(argv, handler, log_after=1):
     parser.add_option('-S', '--save', help='file to save remaining urls to')
     options, args = parser.parse_args()
 
-    queue_handler = URLQueue(seed_file=options.seed, seed_urls=options.urls)
+    #queue_handler = URLQueue(seed_file=options.seed, seed_urls=options.urls)
+    queue_handler = RabbitMQProcessor('localhost', 'test_queue')
     controller = Controller(handler=handler, queue=queue_handler,
                             num_threads=options.threads)
     controller.start()
@@ -712,6 +761,8 @@ def run_crawle(argv, handler, log_after=1):
         controller.stop()
     if options.save:
         queue_handler.save(options.save)
+
+    queue_handler.stop()
 
     after = datetime.now()
 

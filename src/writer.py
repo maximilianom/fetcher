@@ -123,7 +123,7 @@ class RabbitMQWriterTask(threading.Thread):
         self.log.debug("queue declared")
         try:
             while self.should_work:
-                url = self.outgoing_queue.get(timeout=5)
+                url = self.outgoing_queue.get(timeout=1)
                 response = RequestResponse(url)
                 response_str = pickle.dumps(response)
                 self.log.debug("Sending message to RabbitMQ")
