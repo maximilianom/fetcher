@@ -38,7 +38,6 @@ class WriterHandler(object):
             urls = raw_data.split()
 
         if not self.urls:
-            #TODO:Change exception
             raise Exception("No urls provided")
 
         for url in self.urls:
@@ -136,7 +135,6 @@ class RabbitMQWriterTask(threading.Thread):
             self.log.info("Writer Task should not process more messages")
             self.connection.close()
         except Queue.Empty, e:
-            #TODO: Change exception
             raise Queue.Empty(e)
         except Exception, e:
             raise Exception(e)

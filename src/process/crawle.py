@@ -750,8 +750,8 @@ def run_crawle(argv, handler, log_after=1):
     parser.add_option('-S', '--save', help='file to save remaining urls to')
     options, args = parser.parse_args()
 
-    #queue_handler = URLQueue(seed_file=options.seed, seed_urls=options.urls)
-    queue_handler = RabbitMQProcessor('localhost', 'test_queue')
+    queue_handler = URLQueue(seed_file=options.seed, seed_urls=options.urls)
+    #queue_handler = RabbitMQProcessor('localhost', 'test_queue')
     controller = Controller(handler=handler, queue=queue_handler,
                             num_threads=options.threads)
     controller.start()
@@ -762,7 +762,7 @@ def run_crawle(argv, handler, log_after=1):
     if options.save:
         queue_handler.save(options.save)
 
-    queue_handler.stop()
+    #queue_handler.stop()
 
     after = datetime.now()
 
