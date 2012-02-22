@@ -4,17 +4,24 @@ This has to upload and deploy everything, and also run ec2 instances
 #TODO: reservation.instances.public_dns_name
 import logging
 import threading
+import time
 
-from boto.ec2.connection import EC2Connection
+from optparse import OptionParser
+
+import boto
+from fabric.api import local
 
 logging.basicConfig(level='DEBUG')
 
-AWS_ACCESS_KEY=''
-AWS_SECRET_KEY=''
-AMI_ID=''
-KEY_NAME=''
-TYPE=''
-SECURITY_GROUP=''
+AWS_ACCESS_KEY = ''
+AWS_SECRET_KEY  = ''
+AMI_ID = ''
+KEY_NAME = ''
+TYPE = ''
+SECURITY_GROUP = ''
+
+IDENTITY = ''
+FABFILE_PATH = ''
 
 class UploaderHandler(object):
     """
@@ -27,30 +34,48 @@ class UploaderHandler(object):
 
     def __init__(self, instance_num):
         self.threads = []
+        self.instance_ids = []
         self.instance_num = instance_num
 
         self.log.info("Connecting to EC2 server...")
-        self.conn = EC2Connection(AWS_ACCESS_KEY, AWS_SECRET_KEY)
+        self.conn = boto.connect_ec2(AWS_ACCESS_KEY, AWS_SECRET_KEY)
 
 
     def upload(self):
+        """
+        Main method that should be called from outside. It launches isntances
+        and starts deploying threads
+        """
         for i in range(0, self.instance_num):
-            self.launch_ec2_instance()
+            instance_dns = self._launch_ec2_instance(i)
             self.log.info("Starting deploy process #%d...", i)
-            deployer = Deployer(i) #TODO: add ip, and other parameters
+            deployer = Deployer(i, instance_dns)
             deployer.start()
             self.threads.append(deployer)
 
-    def launch_ec2_instance(self):
+    def _launch_ec2_instance(self, i):
         self.conn.run_instances(AMI_ID,
                                 key_name=KEY_NAME,
                                 instance_type=TYPE,
                                 security_groups=[SECURITY_GROUP])
+        time.sleep(30)
+
+        #Get last reservation "[-1]", and the instance of that reservation
+        while True:
+            instance = self.conn.get_all_instances()[-1].instances[0]
+            if instance.state == 'running':
+                break
+            time.sleep(10)
+
+        instance.add_tag('Name', 'Fethcer_%d' % i)
+        self.instance_ids.append(instance.id)
+
+        return instance.public_dns_name
 
     def stop(self):
-        #TODO:AVERIGUAR ESTO
-        #Terminate instances
-        pass
+        self.log.info("Terminating all #%d instances", len(self.instance_ids))
+        self.conn.terminate_instances(instance_ids=self.instance_ids)
+        self.conn.close()
 
     def wait(self):
         for thread in self.threads:
@@ -65,9 +90,25 @@ class Deployer(threading.Thread):
     def __init__(self, name, host):
         threading.Thread.__init__(self)
 
-        self.name = name
+        self.name = "Deployer#%d" % name
         self.host = host
 
 
     def run(self):
-        self.log.info("%d - running remote fabric deploy script", self.name)
+        self.log.info("%d - copying files to remote destination", self.name)
+        local("scp -i %s -rf process/ ubuntu@%s:/home/ubuntu" % (IDENTITY, self.host))
+
+        self.log.info("%d - starting remote start script", self.name)
+        local("fab -i %s -f %s -u ubuntu -H %s start" % (IDENTITY, FABFILE_PATH, self.host))
+
+
+if __name__ == "__main__":
+    #Script usage should contain amount of threads to work with
+    parser = OptionParser()
+    parser.add_option('-i', '--instance-amount', dest="instance_amount", default=3)
+    options, args = parser.parse_args()
+
+    uploader = UploaderHandler(options.instance_amount)
+    uploader.upload()
+    uploader.wait()
+    uploader.stop()
