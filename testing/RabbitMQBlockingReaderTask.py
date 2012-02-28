@@ -43,7 +43,7 @@ class Jodeme(threading.Thread):
 
 if __name__ == "__main__":
     threads = []
-    reader = BlockingReader('localhost', 'test1')
+    reader = BlockingReader('ec2-23-20-111-92.compute-1.amazonaws.com', 'test1')
     for num in range(0,3):
         threads.append(Jodeme(reader))
 

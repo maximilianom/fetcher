@@ -5,6 +5,8 @@ pika.log.setup(color=True)
 
 class Reader(object):
     def __init__(self, host, queue):
+        pika.log.info("Creating object")
+
         self.queue = queue
         self.parameters = pika.ConnectionParameters(host)
         self.connection = SelectConnection(self.parameters, self.on_connected)
@@ -22,17 +24,14 @@ class Reader(object):
 
     def on_queue_declared(self, frame):
         pika.log.info("Queue declared")
-        self.channel.basic_get(self.on_get, queue=self.queue)
+        self.channel.basic_consume(self.on_get, queue=self.queue)
 
     def on_get(self, channel, meth_frame, head_frame, body):
         pika.log.info("message received")
         pika.log.info(body)
-        self.connection.close()
-
-
 
 if __name__ == "__main__":
-    reader = Reader("localhost", "test")
+    reader = Reader("ec2-23-20-111-92.compute-1.amazonaws.com", "test_queue")
     try:
         reader.connection.ioloop.start()
     except KeyboardInterrupt:
