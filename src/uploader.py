@@ -1,7 +1,3 @@
-"""
-This has to upload and deploy everything, and also run ec2 instances
-"""
-#TODO: reservation.instances.public_dns_name
 import logging
 import threading
 import time
@@ -10,8 +6,6 @@ from optparse import OptionParser
 
 import boto
 from fabric.api import local
-
-logging.basicConfig(level='INFO')
 
 AWS_ACCESS_KEY = ''
 AWS_SECRET_KEY  = ''
@@ -34,13 +28,19 @@ class UploadProcessException(Exception):
 class UploaderHandler(object):
     """
     This class will handle everything that has to do with deploying and
-    uploading the fetching core process content, and creating the necessary
+    running the fetching core process content, as well as creating the necessary
     ec2 instances
     """
 
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(formatter)
     log = logging.getLogger(__name__)
+    log.setLevel(logging.DEBUG)
+    log.addHandler(sh)
 
-    def __init__(self, instance_num):
+    def __init__(self, instance_num=2):
         self.threads = []
         self.instance_ids = []
         self.instance_num = instance_num
@@ -54,14 +54,14 @@ class UploaderHandler(object):
             raise UploadProcessException(e)
 
 
-    def upload(self):
+    def start(self):
         """
         Main method that should be called from outside. It launches isntances
         and starts deploying threads
         """
         for i in range(0, self.instance_num):
             instance_dns = self._launch_ec2_instance(i)
-            self.log.info("Starting deploy process #%d...", i)
+            self.log.info("Starting deploy process #%d", i)
             deployer = Deployer(i, instance_dns)
             deployer.start()
             self.threads.append(deployer)
@@ -118,7 +118,8 @@ class Deployer(threading.Thread):
         self.host = host
 
     def run(self):
-        self.log.info("%s - Letting amazon make its status check on new instance. Sleeping 60s", self.name)
+        self.log.info("%s - Letting amazon make its status check on the new instance. Sleeping 60s",
+                      self.name)
         time.sleep(60)
 
         self.log.info("%s - starting remote script", self.name)
@@ -132,4 +133,4 @@ if __name__ == "__main__":
     options, args = parser.parse_args()
 
     uploader = UploaderHandler(int(options.instance_amount))
-    uploader.upload()
+    uploader.start()

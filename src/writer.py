@@ -2,14 +2,13 @@ import threading
 import logging
 import Queue
 import pickle
+import os
 
 from optparse import OptionParser
 
 import pika
 from pika.adapters import SelectConnection
 from crawle import RequestResponse
-
-logging.basicConfig(level='DEBUG')
 
 WRITER_THREADS=5
 
@@ -20,22 +19,29 @@ class WriterHandler(object):
     """
 
     #TODO: Add handlers and proper logger configuration
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(formatter)
     log = logging.getLogger(__name__)
+    log.setLevel(logging.DEBUG)
+    log.addHandler(sh)
 
 
-    def __init__(self, host, queue_name, seed_file=None, raw_data=''):
+    def __init__(self, host, queue_name, seed_content=None):
         self.threads = []
         self.outgoing_queue = Queue.Queue()
         self.urls = ''
 
-        if seed_file:
-            self.log.info("Seed file provided, passing urls to memory")
-            fp = open(seed_file, 'r')
-            #File should contain urls with '\n'
-            self.urls = fp.read().split()
-        else:
-            self.log.info("Seed file not found, processing raw_data")
-            urls = raw_data.split()
+        if seed_content:
+            if os.path.isfile(seed_content):
+               self.log.info("Seed file provided, passing urls to memory")
+               fp = open(seed_content, 'r')
+               #File should contain urls with '\n'
+               self.urls = fp.read().split()
+            else:
+               self.log.info("Seed file not found, processing raw_data")
+               urls = seed_content.split()
 
         if not self.urls:
             raise Exception("No urls provided")
@@ -52,6 +58,9 @@ class WriterHandler(object):
                                                    self.outgoing_queue))
 
     def start(self):
+        """
+        Main method that should be called from outside
+        """
         try:
             self.log.info("Starting %d writer threads...", len(self.threads))
 
@@ -152,5 +161,5 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args()
 
-    writer = WriterHandler(options.host_name, options.queue_name, seed_file=options.seed_file)
+    writer = WriterHandler(options.host_name, options.queue_name, seed_content=options.seed_file)
     writer.start()
