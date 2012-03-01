@@ -32,10 +32,11 @@ class Fetcher(object):
         """
         self.log.info("Initiating both uploader and writer handlers.")
         try:
+            self.log.info("Creating dir where the fetched files are going to be pulled in")
             os.makedirs('../Results')
+
             writer = WriterHandler(self._host, self._queue_name, seed_content=seed_content)
-            #This uploader will raise a default of 2 amazon instances for fetching purposes
-            uploader = UploaderHandler()
+            uploader = UploaderHandler() # Default of 2 amazon instances
 
             self.log.info("Starting writer task.")
             writer.start()
