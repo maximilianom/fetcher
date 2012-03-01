@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+import os
 
 from optparse import OptionParser
 
@@ -111,10 +112,11 @@ class Deployer(threading.Thread):
 
     log = logging.getLogger(__name__)
 
-    def __init__(self, name, host):
+    def __init__(self, number, host):
         threading.Thread.__init__(self)
 
-        self.name = "Deployer#%d" % name
+        self.number = number
+        self.name = "Deployer#%d" % number
         self.host = host
 
     def run(self):
@@ -124,6 +126,7 @@ class Deployer(threading.Thread):
 
         self.log.info("%s - starting remote script", self.name)
         local("fab -i %s -f %s -u ubuntu -H %s start" % (IDENTITY, FABFILE_PATH, self.host))
+
 
 
 if __name__ == "__main__":

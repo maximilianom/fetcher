@@ -161,4 +161,4 @@ class FileHandler(crawle.Handler):
                 print >> self.err_log, "%s - Exception: %s" % (req_res.name, e)
 
 if __name__ == "__main__":
-    crawle.run_crawle(sys.argv, handler=FileHandler('./Things'))
+    crawle.run_crawle(sys.argv, handler=FileHandler('./Results'))

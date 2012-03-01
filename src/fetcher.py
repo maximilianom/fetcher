@@ -4,6 +4,7 @@ writer module. It should be replaced with a django view later on.
 """
 
 import logging
+import os
 
 from optparse import OptionParser
 
@@ -31,6 +32,7 @@ class Fetcher(object):
         """
         self.log.info("Initiating both uploader and writer handlers.")
         try:
+            os.makedirs('../Results')
             writer = WriterHandler(self._host, self._queue_name, seed_content=seed_content)
             #This uploader will raise a default of 2 amazon instances for fetching purposes
             uploader = UploaderHandler()

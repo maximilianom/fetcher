@@ -33,12 +33,3 @@ if __name__ == '__main__':
 
     converter = UrlConverter(options.seed_file, int(options.max_count))
     converter.mutate()
-
-
-
-
-
-
-
-
-

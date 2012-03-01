@@ -104,7 +104,7 @@ class RabbitMQWriterTask(threading.Thread):
         try:
             self.connection.ioloop.start()
         except Queue.Empty, e:
-            self.log.info("The queue is empty. There's nothing more to process")
+            self.log.info("Writer finished.")
         except Exception, e:
             self.log.error("Exception while writing rabbit messages. e: %s", e)
 
