@@ -22,8 +22,9 @@ class Fetcher(object):
     log.setLevel(logging.DEBUG)
     log.addHandler(sh)
 
-    def __init__(self, queue_name, host="localhost"):
+    def __init__(self, queue_name, instance_amount, host="localhost"):
         self._queue_name = queue_name
+        self._instance_amount = instance_amount
         self._host = host
 
     def fetch(self, seed_content):
@@ -36,7 +37,7 @@ class Fetcher(object):
             os.makedirs('../Results')
 
             writer = WriterHandler(self._host, self._queue_name, seed_content=seed_content)
-            uploader = UploaderHandler() # Default of 2 amazon instances
+            uploader = UploaderHandler(self._instance_amount)
 
             self.log.info("Starting writer task.")
             writer.start()
