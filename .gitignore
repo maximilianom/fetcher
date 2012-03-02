@@ -1,1 +1,2 @@
 *.pyc
+fetcher/local_settings.py
