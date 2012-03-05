@@ -1,11 +1,12 @@
 import logging
 import threading
 import time
-import os
 
 from optparse import OptionParser
 
 import boto
+
+from django.conf import settings
 from fabric.api import local
 
 AWS_ACCESS_KEY = ''
@@ -15,8 +16,8 @@ KEY_NAME = ''
 TYPE = 'm1.small'
 SECURITY_GROUP = 'default'
 
-IDENTITY = ''
-FABFILE_PATH = ''
+IDENTITY = '/home/ubuntu/.ssh/id'
+FABFILE_PATH = settings.PROJECT_ROOT + '/process/utils/fabfiles/run.py'
 
 class UploadProcessException(Exception):
     def __init__(self, error):
@@ -94,6 +95,15 @@ class UploaderHandler(object):
             self.log.error("Unable to start instance. e: %s", e)
             self.stop()
             raise UploadProcessException(e)
+
+    def add_instance(self):
+        self.log("Adding one more instance")
+        num = len(self.instance_ids) + 1
+        instance_dns = self._launch_ec2_instance(num)
+        self.log.info("Adding instance #%d to fetching process", num)
+        deployer = Deployer(num, instance_dns)
+        deployer.start()
+        self.threads.append(deployer)
 
     def stop(self):
         self.log.info("Terminating all #%d instances", len(self.instance_ids))

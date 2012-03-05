@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block javascript %}
+<script type="text/javascript">
+function showContent(obj) {
+    var inner = obj.parentNode.getElementsByTagName("div")[0];
+    if (inner.style.display == "none")
+        inner.style.display = "";
+    else
+        inner.style.display = "none";
+    }
+</script>
+{% endblock %}
+
+{% block user %}
+{% if user.is_authenticated %}
+<div>
+    {{ user }}
+    <a href="/logout/">Logout</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block main_content %}
+<div>
+    <h2>Processing...</h2>
+    <p>Number of instances: {{ instance_num }} </p>
+    <div>
+        <h3>Content</h3>
+        <div class="file_content">
+            <input type="button" onclick="showContent(this);" value="Show/Hide" />
+            <div class="inner" style="display:none">
+                {{ seed_content }}
+            </div>
+        </div>
+    </div>
+</div>
+<a href="/process/add_machine">Add machine</a></b>
+<a href="/process/stop">Stop processing</a></b>
+{% endblock %}
