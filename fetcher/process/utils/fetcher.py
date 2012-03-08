@@ -33,9 +33,6 @@ class Fetcher(object):
         """
         self.log.info("Initiating both uploader and writer handlers.")
         try:
-            self.log.info("Creating dir where the fetched files are going to be pulled in")
-            os.makedirs('../Results')
-
             writer = WriterHandler(self._host, self._queue_name, seed_content=seed_content)
             uploader = UploaderHandler(self._instance_amount)
 

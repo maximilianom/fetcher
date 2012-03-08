@@ -10,9 +10,11 @@ import os
 import random
 import time
 
+from django.conf import settings
 from fabric.api import run, cd, put, sudo, get
 
 def start():
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'fetcher.settings'
     _copy_files()
     _install_dependences()
     with cd("/home/ubuntu/process/"):
@@ -22,10 +24,12 @@ def start():
 
 def _copy_files():
     with cd("/home/ubuntu/"):
-        run("mkdir process")
+        run("mkdir -p process")
 
-    put("SaveInFileHandler.py", "/home/ubuntu/process")
-    put("crawle.py", "/home/ubuntu/process")
+    root = settings.PROJECT_ROOT
+
+    put(root + "/process/utils/SaveInFileHandler.py", "/home/ubuntu/process")
+    put(root + "/process/utils/crawle.py", "/home/ubuntu/process")
 
 def _install_dependences():
     sudo("easy_install lxml")

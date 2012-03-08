@@ -41,7 +41,7 @@ class WriterHandler(object):
                self.urls = fp.read().split()
             else:
                self.log.info("Seed file not found, processing raw_data")
-               urls = seed_content.split()
+               self.urls = seed_content.split()
 
         if not self.urls:
             raise Exception("No urls provided")

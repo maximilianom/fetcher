@@ -17,11 +17,11 @@ def setup():
     In charge of configuring apache, deploying rabbitmq and creating the fetcher virtualenv
     """
     #sudo("apt-get update")
-    sudo("virtualenv --no-site-packages /home/ubuntu/envs/fetcher")
-    sudo("mkdir -p /home/ubuntu/scripts/")
+    run("virtualenv --no-site-packages /home/ubuntu/envs/fetcher")
+    run("mkdir -p /home/ubuntu/scripts/")
 
     #Installing rabbitmq
-    put("fetcher/thirdparty/rabbitmq-server_2.7.1-1_all.deb", "/home/ubuntu/")
+    run("wget 'http://www.rabbitmq.com/releases/rabbitmq-server/v2.7.1/rabbitmq-server_2.7.1-1_all.deb'")
     sudo("apt-get install -y erlang-nox")
     sudo("dpkg -i rabbitmq-server_2.7.1-1_all.deb")
     run("rm /home/ubuntu/rabbitmq-server_2.7.1-1_all.deb")

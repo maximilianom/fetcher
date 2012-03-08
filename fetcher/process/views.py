@@ -32,12 +32,11 @@ def process(request):
             req_model.content = seed_content
             req_model.save()
 
-            #fetcher = Fetcher("fetch_queue", instance_num)
-            #fetcher.fetch(seed_content)
+            fetcher = Fetcher("fetch_queue", instances_used)
+            fetcher.fetch(seed_content)
 
     if request.method == 'GET':
         req_model = Request.objects.order_by('-created_at')[0:1].get()
-
 
     return render_to_response('process.html',
                              {'instance_num': req_model.instances_used,
@@ -57,6 +56,6 @@ def add_machine(request):
 
 @login_required
 def stop(request):
-    uploader = UploaderHandler()
-    uploader.stop()
+    #uploader = UploaderHandler()
+    #uploader.stop()
     return HttpResponseRedirect('/')

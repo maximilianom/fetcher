@@ -8,7 +8,7 @@ except ImportError:
 from fetcher import VERSION
 
 setup(
-    name='fetcher',
+    name='django_fetcher',
     version=VERSION,
     description='Fetcher',
     author='Maximiliano Mendez',
@@ -16,10 +16,10 @@ setup(
     url='',
     install_requires=[
         "Django==1.2.3",
-        "psycopg2==2.4.4",
-        "Fabric==1.4.0",
+        "psycopg2==2.3.2",
+        "Fabric==1.2.2",
         "pika==0.9.5",
-        "boto==2.2.2",
+        "boto==2.0b4",
     ],
     packages=find_packages(),
     include_package_data=True,

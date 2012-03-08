@@ -751,7 +751,7 @@ def run_crawle(argv, handler, log_after=1):
     options, args = parser.parse_args()
 
     #queue_handler = URLQueue(seed_file=options.seed, seed_urls=options.urls)
-    queue_handler = RabbitMQProcessor('localhost', 'test')
+    queue_handler = RabbitMQProcessor('localhost', 'test_queue')
     controller = Controller(handler=handler, queue=queue_handler,
                             num_threads=options.threads)
     controller.start()
