@@ -20,6 +20,9 @@ def setup():
     run("virtualenv --no-site-packages /home/ubuntu/envs/fetcher")
     run("mkdir -p /home/ubuntu/scripts/")
 
+    #Installing postgresql
+    sudo("apt-get install -y postgresql")
+
     #Installing rabbitmq
     run("wget 'http://www.rabbitmq.com/releases/rabbitmq-server/v2.7.1/rabbitmq-server_2.7.1-1_all.deb'")
     sudo("apt-get install -y erlang-nox")
@@ -31,7 +34,7 @@ def setup():
 def deploy():
     source = "source /home/ubuntu/envs/fetcher/bin/activate && "
     with cd("/home/fetcher"):
-        sudo(source + "easy_install -U fetcher")
+        sudo(source + "easy_install fetcher")
 
 def update():
     source = "source /home/ubuntu/envs/fetcher/bin/activate && "
