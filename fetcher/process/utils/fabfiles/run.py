@@ -29,11 +29,10 @@ def _copy_files():
     root = settings.PROJECT_ROOT
 
     put(root + "/process/utils/SaveInFileHandler.py", "/home/ubuntu/process")
-    put(root + "/process/utils/crawle.py", "/home/ubuntu/process")
 
 def _install_dependences():
+    sudo("easy_install django_fetcher")
     sudo("easy_install lxml")
-    sudo("easy_install pika")
 
 def _retrieve_files():
     #TODO: Add more efficient logic
@@ -43,6 +42,6 @@ def _retrieve_files():
 
     for i in range(1,100):
         if not os.path.exists('/home/ubuntu/results/%d' % i):
-            os.mkdir('/home/ubuntu/results/%d' % i)
+            os.makedirs('/home/ubuntu/results/%d' % i)
             get('/home/ubuntu/process/Results', '/home/ubuntu/results/%d' % i)
             break

@@ -135,7 +135,8 @@ class Deployer(threading.Thread):
         time.sleep(60)
 
         self.log.info("%s - starting remote script", self.name)
-        local("fab -i %s -f %s -u ubuntu -H %s start" % (IDENTITY, FABFILE_PATH, self.host))
+        fab = "/home/ubuntu/envs/fetcher/bin/fab "
+        local(fab + "-i %s -f %s -u ubuntu -H %s start" % (IDENTITY, FABFILE_PATH, self.host))
 
 
 
