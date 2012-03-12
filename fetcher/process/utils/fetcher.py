@@ -4,7 +4,6 @@ writer module. It should be replaced with a django view later on.
 """
 
 import logging
-import os
 
 from optparse import OptionParser
 
@@ -40,16 +39,11 @@ class Fetcher(object):
             writer.start()
 
             self.log.info("Starting uploader task.")
-            uploader.start()
-
-            self.log.info("Waiting for uploader to finish.")
-            uploader.wait()
-
-            self.log.info("Stopping uploader.")
-            uploader.stop()
-        #TODO: Change exception handling
+            instances_ids = uploader.start()
         except Exception, e:
             self.log.error("Couldn't process. e: %s", e)
+
+        return instances_ids
 
 
 if __name__ == "__main__":
