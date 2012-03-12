@@ -41,7 +41,7 @@ def _retrieve_files():
     time.sleep(random.randint(1,30))
 
     for i in range(1,100):
-        if not os.path.exists('/home/ubuntu/results/%d' % i):
-            os.makedirs('/home/ubuntu/results/%d' % i)
-            get('/home/ubuntu/process/Results', '/home/ubuntu/results/%d' % i)
+        if not os.path.exists('/mnt/fetcher/results/%d' % i):
+            os.makedirs('/mnt/results/%d' % i)
+            get('/home/ubuntu/process/Results', '/mnt/fetcher/results/%d' % i)
             break
