@@ -20,6 +20,9 @@ class Request(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now=True)
 
+    #Lists of amazon istances saved in JSON format
+    instances_ids = models.TextField()
+
     def __unicode__(self):
         return self.name
 
