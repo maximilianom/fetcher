@@ -62,11 +62,13 @@ class UploaderHandler(object):
         and starts deploying threads
         """
         for i in range(0, self.instance_num):
-            instance_dns = self._launch_ec2_instance(i)
+            instance_dns, instance_id = self._launch_ec2_instance(i)
             self.log.info("Starting deploy process #%d", i)
-            deployer = Deployer(i, instance_dns)
+            deployer = Deployer(i, instance_dns, instance_id, self.conn)
             deployer.start()
             self.threads.append(deployer)
+
+        return self.instances_ids
 
     def _launch_ec2_instance(self, i):
         try:
@@ -90,7 +92,7 @@ class UploaderHandler(object):
             instance.add_tag('Name', 'Fethcer_%d' % i)
             self.instance_ids.append(instance.id)
 
-            return instance.public_dns_name
+            return instance.public_dns_name, instance.id
         except Exception, e:
             self.log.error("Unable to start instance. e: %s", e)
             self.stop()
@@ -110,6 +112,11 @@ class UploaderHandler(object):
         self.conn.terminate_instances(instance_ids=self.instance_ids)
         self.conn.close()
 
+    def stop_instances(self, instances):
+        self.log.info("Terminating all #%d instances", len(instances))
+        self.conn.terminate_instances(instance_ids=instances)
+        self.conn.close()
+
     def wait(self):
         for thread in self.threads:
             thread.join()
@@ -122,12 +129,15 @@ class Deployer(threading.Thread):
 
     log = logging.getLogger(__name__)
 
-    def __init__(self, number, host):
+    def __init__(self, number, host, instance_id, conn):
         threading.Thread.__init__(self)
 
         self.number = number
         self.name = "Deployer#%d" % number
         self.host = host
+
+        self.conn = conn
+        self.instance_id = instance_id
 
     def run(self):
         self.log.info("%s - Letting amazon make its status check on the new instance. Sleeping 60s",
@@ -136,8 +146,15 @@ class Deployer(threading.Thread):
 
         self.log.info("%s - starting remote script", self.name)
         fab = "/home/ubuntu/envs/fetcher/bin/fab "
-        local(fab + "-i %s -f %s -u ubuntu -H %s start" % (IDENTITY, FABFILE_PATH, self.host))
+        local(fab + "-i %s -f %s -u ubuntu -H %s start > /mnt/fetcher/logs/deployer/Deployer_%s" %
+                (IDENTITY, FABFILE_PATH, self.host, self.name))
 
+        #Terminate instance
+        self._terminate()
+
+def _terminate(self):
+    self.log.info("%s - terminating amazon instance", self.name)
+    self.conn.terminate_instances(instance_ids=self.instance_id)
 
 
 if __name__ == "__main__":
