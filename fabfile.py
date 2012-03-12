@@ -29,6 +29,16 @@ def setup():
     sudo("dpkg -i rabbitmq-server_2.7.1-1_all.deb")
     run("rm /home/ubuntu/rabbitmq-server_2.7.1-1_all.deb")
 
+    #Create folder under mnt to contain ids, logs and files
+    run("mkdir /mnt/fetcher")
+    with cd("/mnt/fetcher"):
+        run("mkdir logs")
+        run("mkdir logs/deployer")
+        sudo("chown www-data:www-data logs/deployer")
+        sudo("chown www-data:www-data logs")
+
+    sudo("chwon www-data:www-data /mnt/fetcher")
+
     _configure_apache()
 
 def deploy():
