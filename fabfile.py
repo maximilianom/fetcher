@@ -6,7 +6,7 @@ Fabric script which allows to update, install or deploy, and setup fetcher
 Usage:
     fab -i *id* -u ubuntu -H *host* [target]
 
-Where [target] can be either "setup", "deploy", or "update"
+Where [target] can be either "setup" or "update"
 """
 
 
@@ -30,25 +30,20 @@ def setup():
     run("rm /home/ubuntu/rabbitmq-server_2.7.1-1_all.deb")
 
     #Create folder under mnt to contain ids, logs and files
-    run("mkdir /mnt/fetcher")
+    sudo("mkdir /mnt/fetcher")
     with cd("/mnt/fetcher"):
-        run("mkdir logs")
-        run("mkdir logs/deployer")
+        sudo("mkdir logs")
+        sudo("mkdir logs/deployer")
         sudo("chown www-data:www-data logs/deployer")
         sudo("chown www-data:www-data logs")
 
-    sudo("chwon www-data:www-data /mnt/fetcher")
+    sudo("chown www-data:www-data /mnt/fetcher")
 
     _configure_apache()
 
-def deploy():
-    source = "source /home/ubuntu/envs/fetcher/bin/activate && "
-    with cd("/home/fetcher"):
-        sudo(source + "easy_install fetcher")
-
 def update():
     source = "source /home/ubuntu/envs/fetcher/bin/activate && "
-    with cd("/home/fetcher"):
+    with cd("/home/ubuntu"):
         sudo(source + "easy_install -U fetcher")
 
     sudo("service apache2 restart")
