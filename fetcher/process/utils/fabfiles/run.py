@@ -29,6 +29,7 @@ def _copy_files():
     root = settings.PROJECT_ROOT
 
     put(root + "/process/utils/SaveInFileHandler.py", "/home/ubuntu/process")
+    put(root + "/process/utils/crawle.py", "/home/ubuntu/process")
 
 def _install_dependences():
     sudo("easy_install django_fetcher")

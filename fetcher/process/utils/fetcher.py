@@ -40,10 +40,9 @@ class Fetcher(object):
 
             self.log.info("Starting uploader task.")
             instances_ids = uploader.start()
+            return instances_ids
         except Exception, e:
             self.log.error("Couldn't process. e: %s", e)
-
-        return instances_ids
 
 
 if __name__ == "__main__":

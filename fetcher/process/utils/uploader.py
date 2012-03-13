@@ -16,7 +16,7 @@ KEY_NAME = ''
 TYPE = 'm1.small'
 SECURITY_GROUP = 'default'
 
-IDENTITY = '/home/ubuntu/.ssh/id'
+IDENTITY = '/mnt/fetcher/id'
 FABFILE_PATH = settings.PROJECT_ROOT + '/process/utils/fabfiles/run.py'
 
 class UploadProcessException(Exception):
@@ -68,7 +68,7 @@ class UploaderHandler(object):
             deployer.start()
             self.threads.append(deployer)
 
-        return self.instances_ids
+        return self.instance_ids
 
     def _launch_ec2_instance(self, i):
         try:
@@ -154,7 +154,7 @@ class Deployer(threading.Thread):
 
 def _terminate(self):
     self.log.info("%s - terminating amazon instance", self.name)
-    self.conn.terminate_instances(instance_ids=self.instance_id)
+    self.conn.terminate_instances(instance_ids=[self.instance_id,])
 
 
 if __name__ == "__main__":
