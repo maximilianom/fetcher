@@ -35,12 +35,12 @@ class UploaderHandler(object):
     """
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(formatter)
+    fh = logging.FileHandler("/mnt/fetcher/logs/uploader.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
-    log.addHandler(sh)
+    log.addHandler(fh)
 
     def __init__(self, instance_num=2):
         self.threads = []
@@ -146,15 +146,15 @@ class Deployer(threading.Thread):
 
         self.log.info("%s - starting remote script", self.name)
         fab = "/home/ubuntu/envs/fetcher/bin/fab "
-        local(fab + "-i %s -f %s -u ubuntu -H %s start > /mnt/fetcher/logs/deployer/Deployer_%s" %
+        local(fab + "-i %s -f %s -u ubuntu -H %s start > /mnt/fetcher/logs/deployer/%s.log" %
                 (IDENTITY, FABFILE_PATH, self.host, self.name))
 
         #Terminate instance
         self._terminate()
 
-def _terminate(self):
-    self.log.info("%s - terminating amazon instance", self.name)
-    self.conn.terminate_instances(instance_ids=[self.instance_id,])
+    def _terminate(self):
+        self.log.info("%s - terminating amazon instance", self.name)
+        self.conn.terminate_instances(instance_ids=[self.instance_id,])
 
 
 if __name__ == "__main__":

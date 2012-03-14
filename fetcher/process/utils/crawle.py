@@ -610,28 +610,31 @@ class RabbitMQProcessor(CrawlQueue):
 
     def __init__(self, host, queue_name):
         super(RabbitMQProcessor, self).__init__()
+        conn_retries = 4
+        connected = False
         self.queue_name = queue_name
-        self.parameters = pika.ConnectionParameters(host)
-        self.connection = BlockingConnection(self.parameters)
+        while conn_retries > 0 or not connected:
+            try:
+                self.parameters = pika.ConnectionParameters(host)
+                self.connection = BlockingConnection(self.parameters)
 
-        self.channel = self.connection.channel()
-        self.channel.queue_declare(queue=self.queue_name, durable=True,
+                self.channel = self.connection.channel()
+                self.channel.queue_declare(queue=self.queue_name, durable=True,
                                    exclusive=False, auto_delete=False)
+                connected = True
+            except Exception, e:
+                conn_retries -= 1
+
+        if not connected:
+            global STOP_CRAWLE
+            STOP_CRAWLE = True
+            self.stop()
 
     def _get(self):
         method, header, body = self.channel.basic_get(queue=self.queue_name)
 
         if method.NAME == 'Basic.GetEmpty':
             raise Queue.Empty
-        if body == None:
-            print "======================================="
-            print method.NAME
-            print "method: %s" % method
-            print "header:"
-            print header
-            print "body:"
-            print body
-            print "======================================="
         req_res = pickle.loads(body)
         self.channel.basic_ack(delivery_tag=method.delivery_tag)
         return req_res

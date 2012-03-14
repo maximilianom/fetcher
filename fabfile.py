@@ -16,7 +16,7 @@ def setup():
     """
     In charge of configuring apache, deploying rabbitmq and creating the fetcher virtualenv
     """
-    #sudo("apt-get update")
+    sudo("apt-get update")
     run("virtualenv --no-site-packages /home/ubuntu/envs/fetcher")
     run("mkdir -p /home/ubuntu/scripts/")
 
@@ -34,8 +34,10 @@ def setup():
     with cd("/mnt/fetcher"):
         sudo("mkdir logs")
         sudo("mkdir logs/deployer")
+        sudo("mkdir results")
         sudo("chown www-data:www-data logs/deployer")
         sudo("chown www-data:www-data logs")
+        sudo("chown www-data:www-data results")
 
     sudo("chown www-data:www-data /mnt/fetcher")
 

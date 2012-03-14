@@ -14,12 +14,12 @@ class Fetcher(object):
 
     #TODO: Add handlers and proper logger configuration
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(formatter)
+    fh = logging.FileHandler("/mnt/fetcher/logs/fetcher.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
-    log.addHandler(sh)
+    log.addHandler(fh)
 
     def __init__(self, queue_name, instance_amount, host="localhost"):
         self._queue_name = queue_name

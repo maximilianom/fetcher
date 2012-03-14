@@ -11,7 +11,7 @@ import random
 import time
 
 from django.conf import settings
-from fabric.api import run, cd, put, sudo, get
+from fabric.api import run, cd, put, sudo, get, local
 
 def start():
     os.environ['DJANGO_SETTINGS_MODULE'] = 'fetcher.settings'
@@ -23,8 +23,7 @@ def start():
     _retrieve_files()
 
 def _copy_files():
-    with cd("/home/ubuntu/"):
-        run("mkdir -p process")
+    run("mkdir -p /home/ubuntu/process")
 
     root = settings.PROJECT_ROOT
 
@@ -43,6 +42,6 @@ def _retrieve_files():
 
     for i in range(1,100):
         if not os.path.exists('/mnt/fetcher/results/%d' % i):
-            os.makedirs('/mnt/results/%d' % i)
+            local("mkdir /mnt/fetcher/results/%d" % i)
             get('/home/ubuntu/process/Results', '/mnt/fetcher/results/%d' % i)
             break

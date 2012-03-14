@@ -20,12 +20,12 @@ class WriterHandler(object):
 
     #TODO: Add handlers and proper logger configuration
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(formatter)
+    fh = logging.FileHandler("/mnt/fetcher/logs/writer.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
     log = logging.getLogger(__name__)
     log.setLevel(logging.DEBUG)
-    log.addHandler(sh)
+    log.addHandler(fh)
 
 
     def __init__(self, host, queue_name, seed_content=None):
